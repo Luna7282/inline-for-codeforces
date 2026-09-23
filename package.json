@@ -2,7 +2,7 @@
   "name": "codeforces-inline",
   "displayName": "Inline for Codeforces",
   "description": "Browse, solve and submit Codeforces contests, gyms and group contests without leaving VS Code. Unofficial. Not affiliated with, endorsed by, or sponsored by Codeforces.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "HimanshuShekhar",
   "icon": "media/icon.png",
   "license": "GPL-3.0-or-later",

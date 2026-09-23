@@ -11,6 +11,7 @@ scripts/**
 dist/**
 LESSONS.md
 TESTING.md
+CONTRIBUTING.md
 
 # Generated solution folders — never ship the user's own solutions/history.
 group-*/**

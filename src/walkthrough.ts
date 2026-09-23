@@ -73,9 +73,10 @@ function render(relay: { running: boolean; port: number } | undefined): string {
   </div>
 
   <h2>Install the companion</h2>
+  <p class="muted">Chrome Web Store listing: submitted, pending review — not live yet. Until then, install it manually (takes under a minute):</p>
   <ol>
-    <li>In this repo, find the <code>browser/</code> folder.</li>
-    <li>Chrome → <code>chrome://extensions</code> → turn on <b>Developer mode</b> → <b>Load unpacked</b> → select the <b>browser/</b> folder.</li>
+    <li>Download <code>codeforces-inline-companion-*.zip</code> from the <a href="https://github.com/Luna7282/inline-for-codeforces/releases/latest">latest GitHub release</a> and unzip it.</li>
+    <li>Chrome → <code>chrome://extensions</code> → turn on <b>Developer mode</b> → <b>Load unpacked</b> → select the folder you unzipped.</li>
     <li>In VS Code run <b>Codeforces: Relay info</b> — copy the port and token.</li>
     <li>Chrome → the companion's <b>Details → Extension options</b> → paste the port and token → <b>Save</b>.</li>
     <li>Stay signed in to <code>codeforces.com</code> in that Chrome profile, with a tab open.</li>

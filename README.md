@@ -8,9 +8,9 @@ Browse contests, gyms, and group contests, read statements, run samples, submit,
 
 ## Before you install — read this
 
-**Browsing works with nothing else installed. Opening a problem, viewing a group, and submitting all need a second, free browser extension** (`browser/` in this repo) — that's not a rare case, it's most of what this extension does. Why: Codeforces blocks this extension's own network requests outright, and its submit form has a CAPTCHA only a human in a browser can solve. There's no way around either from inside VS Code. Full detail in **Architecture**, below.
+**Browsing works with nothing else installed. Opening a problem, viewing a group, and submitting all need a second, free browser extension** — that's not a rare case, it's most of what this extension does. Why: Codeforces blocks this extension's own network requests outright, and its submit form has a CAPTCHA only a human in a browser can solve. There's no way around either from inside VS Code. Full detail in **Architecture**, below.
 
-If that's a dealbreaker, this extension isn't for you yet. If it's fine, the companion takes about two minutes to set up — run **`Codeforces: Setup walkthrough`** after installing, or follow **Quick start** below.
+If that's a dealbreaker, this extension isn't for you yet. If it's fine, the companion takes about two minutes to set up — run **`Codeforces: Setup walkthrough`** after installing, or follow **Install** below.
 
 ## Requirements
 
@@ -20,12 +20,22 @@ If that's a dealbreaker, this extension isn't for you yet. If it's fine, the com
 
 ## Install
 
-1. **This extension** — from the Marketplace (search "Codeforces Inline"), or build it yourself (see **Development**, below).
-2. **The companion** — Chrome isn't set up to auto-install this half yet, so it's a manual, one-time "Load unpacked":
-   - `chrome://extensions` → turn on **Developer mode** → **Load unpacked** → select this repo's `browser/` folder.
-   - In VS Code, run **`Codeforces: Relay info`** → copy the port and token.
-   - Companion's **Details → Extension options** → paste them → **Save**.
-   - Stay signed in to `codeforces.com` in that Chrome profile, with a tab open.
+You've already got this extension — that's how you're reading this. The one extra step is the companion browser extension.
+
+### 1. Get the companion
+
+**Chrome Web Store** — *submitted, pending review; not live yet.* <!-- TODO: replace this line with the Web Store listing link once approved --> Once it's live, this becomes a one-click install and the manual steps below won't be needed.
+
+**Manual install (works today):**
+1. Open the [latest release](https://github.com/Luna7282/inline-for-codeforces/releases/latest) on GitHub and download `codeforces-inline-companion-*.zip` from **Assets**.
+2. Unzip it anywhere.
+3. In Chrome, go to `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked**, and select the folder you just unzipped.
+
+### 2. Connect it to VS Code
+
+1. In VS Code, run **`Codeforces: Relay info`** — copy the port and token it shows.
+2. In Chrome, open the companion's card on `chrome://extensions` → **Details** → **Extension options** → paste the port and token → **Save**.
+3. Stay signed in to `codeforces.com` in that Chrome profile, with a tab open.
 
 `Codeforces: Setup walkthrough` covers this in the app, with the reasoning. `Codeforces: Check companion` tells you if it's working.
 
@@ -98,18 +108,7 @@ With the companion unloaded, browsing and solve marks still work (read-only API)
 
 The extension runs a token-guarded localhost relay on `127.0.0.1` (`codeforces.relayPort`, default 27121); the companion polls it, and the two sides check a **protocol version** on every health check so an out-of-sync pair fails with a clear message instead of a silent hang. `Codeforces: Relay info` shows the port and token to paste into the companion's options once; `Codeforces: Check companion` reports whether it's connected. Reads are cached hard on disk (statements 30 days, group lists 15 minutes) since each one is a poll round-trip. If Cloudflare's under-attack mode is ever off, `codeforces.directSubmit` posts straight from the extension instead.
 
-See `browser/README.md` for the companion in detail, `browser/PRIVACY.md` for what it does and doesn't send anywhere, and `LESSONS.md` for the full investigation.
-
-### Where the scrapers will break
-
-Statements, the compiler list, group markup and the submit-form fields are parsed from live HTML. When Codeforces changes markup, `Session.findCsrf`, `parseLanguages`, `groupContests`, `problemDetail` or `submit.ts`'s field names break first. [cf-tool](https://github.com/xalanq/cf-tool) does the same in Go; its issue tracker is a good early warning.
-
-Other failure modes:
-
-- **`codeforces.com` tab closed or challenged.** Reads fail with *"Start the companion extension in Chrome…"* / *"open codeforces.com in Chrome, clear the check"*. Open a tab, clear the check.
-- **Companion service worker asleep.** Chrome suspends MV3 workers after ~30 s idle; a keepalive alarm wakes it within ~30 s and VS Code retries across that window. `Codeforces: Check companion` confirms.
-- **Rate limits.** One request per ~1 s through a single queue; verdict polls are 4 s. Don't lower these during a live contest.
-- **Identical submission.** Codeforces refuses a resubmit of unchanged source; the message is surfaced as-is and still recorded as an attempt.
+See `browser/README.md` for the companion in detail and `browser/PRIVACY.md` for what it does and doesn't send anywhere.
 
 ## Local archive layout
 
@@ -130,52 +129,6 @@ Everything lives under your workspace folder, keyed by `{ judge, scope, contestR
 
 `.meta.json` + `attempts/` are the source of truth for the tree's solve state and `Codeforces: Stats` — they hold tries Codeforces refused outright, which `user.status` never shows. Pre-existing `group-*/gym-*/<digits>/` folders and `.cf/*.json` files (an earlier, pre-1.0 layout) are migrated into this layout the first time you point the extension at a folder that has them: copy, verify, then remove the originals (build artifacts like `A.exe` are left where they are).
 
-## Development
-
-```bash
-npm install
-npm run compile
-```
-
-Open the folder in VS Code, press **F5** — a second VS Code window opens with the extension loaded. To install it into your normal VS Code instead:
-
-```bash
-npm i -g @vscode/vsce
-vsce package                                        # codeforces-inline-<version>.vsix
-code --install-extension codeforces-inline-<version>.vsix
-npm run build:companion                              # dist/codeforces-inline-companion-<version>.zip
-```
-
-`npm run selftest` compiles and runs the checks in `relay.ts` / `archive.ts` / `migrate.ts` over real temp directories and a real HTTP server — no VS Code needed.
-
-### Repo layout
-
-```
-src/
-  http.ts         cookie jar, 1-req/s queue, Cloudflare detect, companion-fetch fallback
-  session.ts      login, csrf, ftaa/bfaa, browser-session import, SecretStorage
-  api.ts          read-only API, apiSig signing, caching
-  scrape.ts       groups, statements, samples, compiler list (+ disk cache)
-  submit.ts       submission POST, verdict polling, latest-submission lookup
-  relay.ts        token-guarded localhost queue the companion polls (+ selfTest)
-  cache.ts        on-disk read cache
-  verdict.ts      shared verdict-string helpers
-  archive.ts      judge-agnostic on-disk layout, per-run/attempt records, rolled-up index
-  migrate.ts      one-time move from the old layout (+ selfTest)
-  files.ts        solution scaffolding, per-problem metadata (ProblemMeta over archive.ts)
-  languages.ts    per-extension compile/run commands, compiler-name → extension guess (+ selfTest)
-  runner.ts       compile, run samples, diff
-  statement.ts    statement webview
-  resultsView.ts  Results panel (samples, attempts, submit)
-  scorecard.ts    attempted/solved/verdict/language rollup, any scope (+ selfTest)
-  statsView.ts    renders scorecard.ts's numbers — whole archive or one Archive-view scope
-  archiveView.ts  Archive view — offline browse of every run and submission
-  walkthrough.ts  Setup walkthrough webview
-  tree.ts         sidebar, local+API solve-state reconciliation
-  extension.ts    commands, workspace picker, migration, wiring
-browser/          companion Chrome extension (MV3) — see browser/README.md, browser/PRIVACY.md
-```
-
 ## Privacy
 
 The extension talks to `codeforces.com` and (for the companion pairing) `127.0.0.1` — nothing else, no analytics, no telemetry. Your session lives in VS Code's `SecretStorage`. Full detail, permission-by-permission, in `browser/PRIVACY.md`.
@@ -183,3 +136,7 @@ The extension talks to `codeforces.com` and (for the companion pairing) `127.0.0
 ## License
 
 GPL-3.0-or-later — see `LICENSE`. In short, for anyone forking this: if you distribute a modified version, it must also be open source under the GPL.
+
+## Contributing
+
+Building from source, the repo layout, the self-test suite, and where the HTML scrapers are most likely to break next are all in **[CONTRIBUTING.md](CONTRIBUTING.md)**.

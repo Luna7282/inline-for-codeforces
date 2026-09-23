@@ -2,6 +2,14 @@
 
 All notable changes to Codeforces Inline and its companion browser extension.
 
+## [0.2.1] — Marketplace-ready README
+
+- `README.md` rewritten for a Marketplace reader: it previously told an installer to "select this repo's `browser/` folder", which is impossible for anyone who only has the Marketplace page. Install now walks through downloading the companion zip from a GitHub release and loading it unpacked, with the Chrome Web Store listing (pending review) marked as the route once it's live.
+- Dropped the "search Codeforces Inline" install step — redundant on the page that already has an Install button.
+- `Codeforces: Setup walkthrough` had the same repo-relative instruction; fixed the same way, with a real link to the release.
+- Moved **Development**, **Repo layout**, and **Where the scrapers will break** out of `README.md` into a new `CONTRIBUTING.md`, so the published README stays user-facing.
+- Companion zip rebuilt against the current `publisher` and attached to the GitHub release for this version.
+
 ## [0.2.0] — packaging
 
 ### Extension
